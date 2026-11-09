@@ -66,6 +66,19 @@ export const routes = defineRoutes([router], (r) =>
             ),
           lazy: () => import('./pages/about'),
         })
+        .page('/changelog', {
+          head: (ctx) =>
+            seo(
+              {
+                title: 'Changelog',
+                description: 'What changed in each release of kitr, newest first.',
+                url: pageUrl('/changelog'),
+                image: ogImage('/changelog'),
+              },
+              ctx,
+            ),
+          lazy: () => import('./pages/changelog'),
+        })
         .page('/privacy', {
           head: (ctx) =>
             seo(
