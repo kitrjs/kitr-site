@@ -14,9 +14,9 @@ export function getRouter() {
     // only a very slow load swaps it for an empty page instead of the default "Loading…".
     defaultPendingComponent: PagePending,
     defaultPendingMs: 8000,
-    // Pages cross-fade; parts marked data-kitr-keep (header, sidebar) stay put. Search and hash
-    // changes (the /packages filters, anchors) don't animate.
-    defaultViewTransition: pageTransitions({ style: 'fade' }),
+    // The next page rises into place as the last one fades; parts marked data-kitr-keep (header,
+    // sidebar) stay put. Search and hash changes (the /packages filters, anchors) don't animate.
+    defaultViewTransition: pageTransitions({ style: 'rise' }),
     // Keeps the router's scroll-to-top instant even though CSS smooth-scrolls in-page jumps.
     scrollRestorationBehavior: 'instant',
   })
