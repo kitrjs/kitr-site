@@ -5,6 +5,7 @@ import {
   ApiIcon,
   AppWindowMacIcon,
   AtomicPowerIcon,
+  BookOpen01Icon,
   BrowserIcon,
   BubbleChatDoneIcon,
   CheckListIcon,
@@ -239,21 +240,63 @@ const glyphs: Record<string, IconSvgElement> = {
   push: NotificationSquareIcon,
   sync: CloudSyncIcon,
   search: Search02Icon,
+  'kit-blank': Package01Icon,
+  'kit-app': BrowserIcon,
+  'kit-dashboard': DashboardSquare02Icon,
+  'kit-fullstack': Layers01Icon,
+  'kit-server': ServerStack02Icon,
+  'kit-saas': UserLock01Icon,
+  'kit-site': WebDesign01Icon,
+  'kit-realtime': LiveStreaming02Icon,
+  'kit-docs': BookOpen01Icon,
+  'kit-desktop': LaptopIcon,
+  'kit-tauri': AppWindowMacIcon,
+  'kit-mobile': SmartPhone04Icon,
 }
 export const glyph = (name: string): IconSvgElement => glyphs[name] ?? Package01Icon
 
 export interface KitEntry {
   name: string
-  text: string
-  /** `site: web`, `api: server`. */
-  platforms: string[]
-  /** Short package names the kit adds. */
+  title: string
+  summary: string
+  /** The npm package; none for `blank`, which is built into the CLI. */
+  package?: string
+  audience: string
+  highlights: Array<{ title: string; text: string }>
+  /** For a preset, the base kit it adds a working app to. */
+  base?: string
+  /** The kit's output in the kitr repository: `examples/app`. */
+  example: string
+  /** The file to open first. */
+  entry?: string
+  run: Array<[string, string]>
+  /** kitrrc.ts platform entries: `site: web({ mode: 'spa' })`. */
+  platforms: Array<{ name: string; type: string; options: string }>
+  /** Short names of the packages in the new project, platforms left out. */
   packages: string[]
-  components: number
+  /** The components copied into app/components/ui. */
+  components: string[]
+  /** Every file `kitr new` writes, by path. */
+  files: string[]
 }
 
-/** Generated from the kit packages' setup modules by scripts/site-data.mjs. */
+/** One file a kit writes, highlighted at build time. */
+export interface KitFile {
+  path: string
+  html: string
+}
+
+/** Generated from the kitr checkout by scripts/site-data.mjs: each kit's block and example output. */
 export const kits = kitsJson as KitEntry[]
+
+export const findKit = (name: string) => kits.find((k) => k.name === name)
+
+/** Written by scripts/site-data.mjs, one file per kit. */
+const kitFiles = import.meta.glob<KitFile[]>('../generated/kits/*.json', { import: 'default' })
+
+/** Every file a kit writes, in path order. */
+export const loadKitFiles = async (name: string): Promise<KitFile[]> =>
+  (await kitFiles[`../generated/kits/${name}.json`]?.()) ?? []
 
 /** Shipped packages per category, in catalog order, leaving out categories with none yet. */
 export const categoryCounts: Array<{

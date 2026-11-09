@@ -294,13 +294,16 @@ export default function PlatformPage() {
                   {kits.map((k, i) => (
                     <span key={k}>
                       {i > 0 && ', '}
-                      <code>{k}</code>
+                      <Link to="/kits/$name" params={{ name: k }}>
+                        <code>{k}</code>
+                      </Link>
                     </span>
                   ))}
                   .
                 </>
               )}
             </p>
+            <Link to="/kits">Compare the kits →</Link>
           </div>
           <Command cmd={`kitr new my-app --kit ${kits[0]}`} className="m-0 bg-background" />
         </section>

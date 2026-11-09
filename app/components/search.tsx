@@ -2,7 +2,7 @@ import { BookOpen01Icon, File02Icon, MapsIcon } from '@hugeicons/core-free-icons
 import { AnimatePresence, motion, presets, useIsPresent } from '@kitr/animation'
 import { useNavigate } from '@kitr/router'
 import { type ComponentProps, useCallback, useEffect, useRef, useState } from 'react'
-import { findPackage } from '#app/lib/catalog'
+import { findKit, findPackage } from '#app/lib/catalog'
 import { loadSiteSearch, type SearchEntry, search } from '#app/lib/content'
 import { Icon, icons } from './icons'
 import { Tile } from './package-bits'
@@ -19,6 +19,19 @@ function describe(r: SearchEntry) {
       icon: <Tile pkg={pkg} size={32} className="rounded-[9px]" />,
       title: pkg.title,
       kind: sub ? (pageKinds[sub] ?? 'Package') : 'Package',
+    }
+  const kit = root === 'kits' && name ? findKit(name) : undefined
+  if (kit)
+    return {
+      icon: (
+        <Tile
+          pkg={{ name: `kit-${kit.name}`, category: 'kits' }}
+          size={32}
+          className="rounded-[9px]"
+        />
+      ),
+      title: kit.title,
+      kind: 'Kit',
     }
   const glyph = root === 'guides' ? BookOpen01Icon : r.section === 'Roadmap' ? MapsIcon : File02Icon
   return {

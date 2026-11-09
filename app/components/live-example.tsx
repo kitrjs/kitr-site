@@ -295,7 +295,7 @@ export function LiveExample({
                   onClick={() => setTab(i)}
                 >
                   {files[i] ? (
-                    files[i].path
+                    files[i].name
                   ) : (
                     <>
                       <Icon icon={icons.storage} size={14} />
@@ -317,7 +317,7 @@ export function LiveExample({
                   className={cn(iconButton, 'data-copied:[&_svg]:animate-pop')}
                   data-copied={copied || undefined}
                   onClick={copy}
-                  aria-label={`Copy ${file.path}`}
+                  aria-label={`Copy ${file.name}`}
                 >
                   <Icon key={String(copied)} icon={copied ? icons.check : icons.copy} size={16} />
                 </button>
@@ -326,7 +326,7 @@ export function LiveExample({
                   href={`${repoUrl}/blob/main/packages/${pkg}/examples/${file.path}`}
                   target="_blank"
                   rel="noreferrer"
-                  aria-label={`${file.path} on GitHub`}
+                  aria-label={`${file.name} on GitHub`}
                 >
                   <Icon icon={icons.github} size={16} />
                 </a>

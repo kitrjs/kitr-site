@@ -2,7 +2,7 @@ import { defineRoutes } from '@kitr/kitr/app'
 import { notFound } from '@kitr/router'
 import router from '@kitr/router/routes'
 import { jsonLd, seo } from '@kitr/seo'
-import { type Category, categories, findPackage } from '#app/lib/catalog'
+import { type Category, categories, findKit, findPackage, loadKitFiles } from '#app/lib/catalog'
 import { loadDoc, loadGuide, loadPackagePage } from '#app/lib/content'
 import { loadExample, loadExampleSources } from '#app/lib/examples'
 import { findPlatform } from '#app/lib/platforms'
@@ -132,6 +132,49 @@ export const routes = defineRoutes([router], (r) =>
             }
           },
           lazy: () => import('./pages/platforms/type'),
+        })
+        .page('/kits', {
+          head: (ctx) =>
+            seo(
+              {
+                title: 'Kits',
+                description:
+                  'Start a kitr project from a kit: an empty project, a small app, a dashboard, a full-stack app, an API or a working product.',
+                url: pageUrl('/kits'),
+                image: ogImage('/kits'),
+              },
+              ctx,
+            ),
+          lazy: () => import('./pages/kits'),
+        })
+        .page('/kits/$name', {
+          loader: async ({ params }) => {
+            const kit = findKit(params.name)
+            if (!kit) throw notFound()
+            // The page opens on the entry file; the rest load when one is picked.
+            const files = await loadKitFiles(kit.name)
+            const entry = files.find((f) => f.path === kit.entry) ?? files[0]
+            return { kit, entry }
+          },
+          head: (ctx) => {
+            const kit = ctx.loaderData?.kit
+            if (!kit) return {}
+            const path = `/kits/${kit.name}`
+            return {
+              ...seo(
+                {
+                  title: kit.title,
+                  description: kit.summary,
+                  url: pageUrl(path),
+                  image: ogImage(path),
+                  type: 'article',
+                },
+                ctx,
+              ),
+              scripts: articleJsonLd({ title: kit.title, description: kit.summary, path }),
+            }
+          },
+          lazy: () => import('./pages/kits/name'),
         })
         .page('/packages', {
           validateSearch: (s: Record<string, unknown>): PackagesSearch => ({

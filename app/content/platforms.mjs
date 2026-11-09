@@ -5,7 +5,6 @@
 // `exclude` drops packages that run on the client or the server in general but make no sense
 // on that platform (server actions and SEO need a web platform that renders HTML).
 // `native` are packages whose drivers switch to the platform's own APIs there.
-// `kits` are the kits that start with the platform.
 
 export const order = ['web', 'server', 'desktop', 'tauri', 'mobile']
 
@@ -14,31 +13,26 @@ export const choices = {
     exclude: [],
     native: ['seo'],
     nativeLabel: 'Built for the web',
-    kits: ['app', 'fullstack', 'site', 'saas', 'realtime'],
   },
   server: {
     exclude: ['actions', 'seo', 'platform', 'secure-storage', 'vite'],
     native: ['api', 'db', 'cache', 'jobs', 'mail', 'shield', 'uploads'],
     nativeLabel: 'Built for the server',
-    kits: ['server', 'fullstack', 'saas'],
   },
   desktop: {
     exclude: ['actions', 'seo'],
     native: ['storage', 'platform'],
     nativeLabel: 'Switch to native here',
-    kits: ['desktop'],
   },
   tauri: {
     exclude: ['actions', 'seo'],
     native: ['storage', 'platform'],
     nativeLabel: 'Switch to native here',
-    kits: ['tauri'],
   },
   mobile: {
     exclude: ['actions', 'seo'],
     native: ['storage', 'platform'],
     nativeLabel: 'Switch to native here',
-    kits: ['mobile'],
   },
 }
 

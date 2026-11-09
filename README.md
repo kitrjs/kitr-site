@@ -20,21 +20,21 @@ npm run dev
 
 ## Where things are
 
-| Path                             | What                                                                                                                            |
-| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| `kitrrc.ts`                      | Packages, providers, the one platform (`site: web({ mode: 'static' })`) and the `site-data` generate step                       |
-| `app/routes.ts`                  | Every page, with its loader and head                                                                                            |
-| `app/document.tsx`               | The HTML shell, header and footer                                                                                               |
-| `app/pages/`                     | One component per page                                                                                                          |
-| `app/components/`, `app/styles/` | The site's own UI and CSS                                                                                                       |
-| `app/content/`                   | Site copy the generate step reads: `platforms.mjs` (what the site adds to each platform), `roadmap.json`                        |
-| `config/content.ts`              | The `@kitr/content` collections: the handbook at `/docs`, the guides at `/guides`, each package's docs under `/packages/<name>` |
-| `app/lib/content.ts`             | Loads those pages for the routes, the guides' frontmatter and the search index                                                  |
-| `scripts/site-data.mjs`          | `kitr catalog --json` and the kits into `app/generated` (packages, kits, platforms), and the share images in `public/og`        |
-| `app/lib/examples.ts`            | The live examples (`<kitr>/packages/*/examples`) shown at `/play/<pkg>/<example>`                                               |
-| `config/`                        | One file per package: `analytics.ts`, `consent.ts`, `content.ts`, `seo.ts`, `theme.ts`, ...                                     |
+| Path                             | What                                                                                                                                                       |
+| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `kitrrc.ts`                      | Packages, providers, the one platform (`site: web({ mode: 'static' })`) and the `site-data` generate step                                                  |
+| `app/routes.ts`                  | Every page, with its loader and head                                                                                                                       |
+| `app/document.tsx`               | The HTML shell, header and footer                                                                                                                          |
+| `app/pages/`                     | One component per page                                                                                                                                     |
+| `app/components/`, `app/styles/` | The site's own UI and CSS                                                                                                                                  |
+| `app/content/`                   | Site copy the generate step reads: `platforms.mjs` (what the site adds to each platform), `kits.mjs` (the gallery order and the blank kit), `roadmap.json` |
+| `config/content.ts`              | The `@kitr/content` collections: the handbook at `/docs`, the guides at `/guides`, each package's docs under `/packages/<name>`                            |
+| `app/lib/content.ts`             | Loads those pages for the routes, the guides' frontmatter and the search index                                                                             |
+| `scripts/site-data.mjs`          | `kitr catalog --json`, each kit's `kitr.kit` block and `examples/` output, and the platforms into `app/generated`, and the share images in `public/og`     |
+| `app/lib/examples.ts`            | The live examples (`<kitr>/packages/*/examples`) shown at `/play/<pkg>/<example>`                                                                          |
+| `config/`                        | One file per package: `analytics.ts`, `consent.ts`, `content.ts`, `seo.ts`, `theme.ts`, ...                                                                |
 
-The packages the live examples import (`@kitr/forms`, `@kitr/3d`, ...) are plain dependencies: the site itself doesn't use them, so they aren't in `kitrrc.ts`. The `@kitr/kit-*` dev dependencies are there because the home page lists what each kit sets up.
+The packages the live examples import (`@kitr/forms`, `@kitr/3d`, ...) are plain dependencies: the site itself doesn't use them, so they aren't in `kitrrc.ts`.
 
 ## Analytics and privacy
 

@@ -75,8 +75,10 @@ function check(href: string): string | undefined {
   if (path.startsWith('/play/')) return undefined
   if (!pages.has(path)) return 'no such page'
   const ids = pages.get(path)
-  if (hash && ids && !ids.has(hash)) return `no heading #${hash}`
-  return undefined
+  if (!hash || !ids || ids.has(hash)) return undefined
+  // A package page sends a section it doesn't have to its guide (/packages/db#testing).
+  if (/^\/packages\/[^/]+$/.test(path) && pages.get(`${path}/guide`)?.has(hash)) return undefined
+  return `no heading #${hash}`
 }
 
 /** `href="/..."` in rendered HTML. */
