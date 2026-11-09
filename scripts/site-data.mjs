@@ -1,14 +1,18 @@
 // The data kitr.dev shows besides its markdown pages. A `generate` step in kitrrc.ts, so it runs
 // after kitr renders config/content.ts into .kitr/content, and writes app/generated (gitignored):
 // - packages.json: `kitr catalog --json`, with each package's live examples and pages,
+// - examples/<package>.json: the highlighted source files of each live example,
 // - kits.json: what each kit sets up, from the published @kitr/kit-* packages,
 // - planned.json: packages on the roadmap that have not shipped yet,
 // - platforms.json: the catalog's platform prose, highlighted, with app/content/platforms.mjs,
+// - release.json: the @kitr/kitr version the site documents, for the footer,
+// - changelog.json: every package's Changesets CHANGELOG.md, one entry per release, for /changelog,
 // and the share images in public/og.
 import { execFileSync } from 'node:child_process'
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
+import { renderMarkdown } from '@kitr/content/markdown'
 import { createHighlighter } from 'shiki'
 import { builder, choices, order } from '../app/content/platforms.mjs'
 import { ogImage, readCatalog, touchIcon } from './og.mjs'
@@ -67,17 +71,45 @@ const pagesOf = (name) =>
           : { slug: item.slug, title: item.title },
     )
 
-/** The live examples in packages/<name>/examples, each with the `meta` it exports. */
-function examplesOf(name) {
-  const dir = join(repo, 'packages', name, 'examples')
-  if (!existsSync(dir)) return []
-  return readdirSync(dir)
-    .filter((f) => f.endsWith('.tsx'))
-    .map((f) => {
-      const meta = readFileSync(join(dir, f), 'utf8').match(/export const meta = (\{[\s\S]*?\n\})/)
-      return { slug: f.replace(/\.tsx$/, ''), ...(meta ? Function(`return ${meta[1]}`)() : {}) }
-    })
+const metaBlock = /\n*export const meta = (\{[\s\S]*?\n\})\n*/
+
+/**
+ * The files behind an example, as the code panel beside its demo shows them: the example itself,
+ * then every file it imports with a relative path, depth first. Paths are relative to the examples
+ * folder. The `meta` export describes the example to the site, so the panel leaves it out.
+ */
+function sourcesOf(dir, entry) {
+  const files = []
+  const visit = (path) => {
+    if (files.some((f) => f.path === path)) return
+    const code = readFileSync(join(dir, path), 'utf8').replace(metaBlock, '\n\n').trim()
+    files.push({ path, code: `${code}\n`, html: highlight(code, 'tsx') })
+    for (const [, spec] of code.matchAll(
+      /^(?:import|export)\b[^'"]*?from\s+['"](\.\.?\/[^'"]+)['"]/gm,
+    )) {
+      const base = join(dirname(path), spec)
+      const target = ['', '.tsx', '.ts', '/index.tsx', '/index.ts']
+        .map((ext) => base + ext)
+        .find((p) => /\.tsx?$/.test(p) && existsSync(join(dir, p)))
+      if (!target) throw new Error(`${join(dir, path)} imports ${spec}, which is not in examples/`)
+      visit(target)
+    }
+  }
+  visit(entry)
+  return files
 }
+
+/** The live examples in packages/<name>/examples, each with the `meta` it exports. */
+const examplesDir = (name) => join(repo, 'packages', name, 'examples')
+const exampleFiles = (name) =>
+  existsSync(examplesDir(name))
+    ? readdirSync(examplesDir(name)).filter((f) => f.endsWith('.tsx'))
+    : []
+const examplesOf = (name) =>
+  exampleFiles(name).map((f) => {
+    const meta = readFileSync(join(examplesDir(name), f), 'utf8').match(metaBlock)
+    return { slug: f.replace(/\.tsx$/, ''), ...(meta ? Function(`return ${meta[1]}`)() : {}) }
+  })
 
 const packages = [...catalog.packages, ...catalog.platforms]
   .sort((a, b) => a.name.localeCompare(b.name))
@@ -87,6 +119,19 @@ const packages = [...catalog.packages, ...catalog.platforms]
     examples: examplesOf(entry.name),
   }))
 write('packages.json', packages)
+
+// Each package's example sources in a file of their own, loaded only by its page.
+mkdirSync(join(out, 'examples'))
+for (const { name } of packages) {
+  const files = exampleFiles(name)
+  if (!files.length) continue
+  write(
+    `examples/${name}.json`,
+    Object.fromEntries(
+      files.map((f) => [f.replace(/\.tsx$/, ''), sourcesOf(examplesDir(name), f)]),
+    ),
+  )
+}
 
 // Planned packages from the package map; a package that has shipped wins.
 const shipped = new Set(packages.map((p) => p.name))
@@ -245,6 +290,12 @@ const seoPages = [
     description: 'Why kitr exists, the ideas behind it, the brand and who makes it.',
     kind: 'About',
   },
+  {
+    path: '/changelog',
+    title: 'Changelog',
+    description: 'What changed in each release of kitr, newest first.',
+    kind: 'Releases',
+  },
 ]
 for (const entry of packages) {
   const kind = `Package · ${icons.colors[entry.category]?.label ?? entry.category}`
@@ -277,6 +328,94 @@ for (const [collection, label] of [
         description: item.description,
         kind: `${label} · ${group.title}`,
       })
+
+// ---------------------------------------------------------------- release and changelog
+
+/** The CLI's version: the release the site documents, shown in the footer. */
+const release = {
+  name: '@kitr/kitr',
+  version: readJson(join(repo, 'packages/kitr/package.json')).version,
+}
+write('release.json', release)
+
+/**
+ * A Changesets CHANGELOG.md as releases: `- abc1234: text` entries under `### Major|Minor|Patch
+ * Changes`, with their indented continuation lines. Dependency bumps ("Updated dependencies",
+ * "- @kitr/x@1.0.0") are not entries.
+ */
+function parseChangelog(source) {
+  const releases = []
+  let current
+  let kind
+  let entry
+  for (const line of source.split('\n')) {
+    const version = line.match(/^## (\d+\.\d+\.\d+\S*)/)
+    const heading = line.match(/^### (Major|Minor|Patch) Changes/)
+    const item = line.match(/^- ([0-9a-f]{7,}): (.*)$/)
+    if (version) {
+      current = { version: version[1], entries: [] }
+      releases.push(current)
+      entry = undefined
+    } else if (heading) {
+      kind = heading[1].toLowerCase()
+      entry = undefined
+    } else if (item && current) {
+      entry = { hash: item[1], kind, text: item[2] }
+      current.entries.push(entry)
+    } else if (/^- /.test(line) || /^#/.test(line)) entry = undefined
+    else if (entry && /^ {2}/.test(line) && !/^ {2}- /.test(line))
+      entry.text += `\n${line.slice(2)}`
+  }
+  return releases
+}
+
+const semverDesc = (a, b) => {
+  const pa = a.split(/[.-]/).map(Number)
+  const pb = b.split(/[.-]/).map(Number)
+  for (let i = 0; i < 3; i++) if (pa[i] !== pb[i]) return pb[i] - pa[i]
+  return 0
+}
+const kindRank = { major: 0, minor: 1, patch: 2 }
+const entryHtml = async (text) =>
+  (await renderMarkdown(text.trim())).blocks
+    .map((b) => (b.type === 'html' ? b.html : `<pre><code>${b.cmd}</code></pre>`))
+    .join('')
+
+const releases = new Map()
+for (const dir of readdirSync(join(repo, 'packages')).sort()) {
+  const file = join(repo, 'packages', dir, 'CHANGELOG.md')
+  const manifest = join(repo, 'packages', dir, 'package.json')
+  if (!existsSync(file) || !existsSync(manifest)) continue
+  const name = readJson(manifest).name
+  const short = name.replace(/^@kitr\//, '')
+  const pkg = { name, to: shipped.has(short) ? `/packages/${short}` : undefined }
+  for (const r of parseChangelog(readFileSync(file, 'utf8'))) {
+    if (!releases.has(r.version)) releases.set(r.version, { published: [], entries: new Map() })
+    const rel = releases.get(r.version)
+    rel.published.push(pkg)
+    // One changeset often touches several packages: list the change once, with all of them.
+    for (const e of r.entries) {
+      if (!rel.entries.has(e.hash))
+        rel.entries.set(e.hash, { hash: e.hash, kind: e.kind, text: e.text, packages: [] })
+      const known = rel.entries.get(e.hash)
+      if (kindRank[e.kind] < kindRank[known.kind]) known.kind = e.kind
+      known.packages.push(pkg)
+    }
+  }
+}
+const changelog = []
+for (const [version, r] of [...releases].sort(([a], [b]) => semverDesc(a, b))) {
+  const entries = [...r.entries.values()].sort((a, b) => kindRank[a.kind] - kindRank[b.kind])
+  changelog.push({
+    version,
+    id: `v${version.replace(/\./g, '-')}`,
+    published: r.published,
+    entries: await Promise.all(
+      entries.map(async ({ text, ...e }) => ({ ...e, html: await entryHtml(text) })),
+    ),
+  })
+}
+write('changelog.json', changelog)
 
 mkdirSync(join(site, 'public/og'), { recursive: true })
 const ogId = (path) => (path === '/' ? 'home' : path.slice(1).replace(/\//g, '-'))

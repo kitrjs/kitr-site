@@ -5,6 +5,7 @@ import { cn } from '@kitr/tailwind'
 import { useEffect, useRef, useState } from 'react'
 import { useHideOnScroll } from '#app/hooks/use-hide-on-scroll'
 import { useSwapped } from '#app/hooks/use-swapped'
+import { release } from '#app/lib/changelog'
 import { followLink, holdLink } from '#app/lib/links'
 import { CreatorMark } from './creator-marks'
 import { Icon, icons } from './icons'
@@ -198,6 +199,7 @@ const footerLinks: Array<{ title: string; links: Array<{ label: string; to: stri
     title: 'Project',
     links: [
       { label: 'About', to: '/about' },
+      { label: 'Changelog', to: '/changelog' },
       { label: 'GitHub', to: repoUrl },
       { label: 'npm', to: 'https://www.npmjs.com/package/@kitr/kitr' },
       { label: 'llms.txt', to: '/llms.txt' },
@@ -215,6 +217,9 @@ function CookieSettings() {
     </button>
   )
 }
+
+/** The newest release on /changelog: `v0-6-0`. */
+const releaseAnchor = `v${release.version.replace(/\./g, '-')}`
 
 const footerLinkClass =
   'cursor-pointer text-left text-foreground no-underline transition-colors duration-120 hover:text-link hover:underline'
@@ -239,6 +244,14 @@ export function Footer() {
             <CreatorMark name="platon" size={12} />
             <span>made by platon</span>
           </a>
+          <Link
+            to="/changelog"
+            hash={releaseAnchor}
+            className="self-start font-mono text-xs text-muted-foreground no-underline hover:text-link"
+            title="What changed in this release"
+          >
+            {release.name} {release.version}
+          </Link>
         </div>
         {footerLinks.map((group) => (
           <nav key={group.title} className="flex flex-col gap-2.5" aria-label={group.title}>

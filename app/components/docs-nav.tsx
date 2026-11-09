@@ -258,7 +258,7 @@ export function Sidebar({
         key={label}
         ref={column}
         data-kitr-keep
-        className="sticky top-16 flex max-h-[calc(100vh-64px)] flex-col gap-5.5 overflow-x-hidden overflow-y-auto py-8 max-phone:hidden"
+        className="sticky top-16 flex max-h-[calc(100vh-64px)] flex-col gap-5.5 overflow-x-hidden overflow-y-auto py-8 [scrollbar-width:none] hover:[scrollbar-width:thin] max-phone:hidden"
         aria-label={label}
       >
         {children}

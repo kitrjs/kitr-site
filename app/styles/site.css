@@ -83,6 +83,41 @@ kbd {
 [data-theme="dark"] .shiki span {
   color: var(--shiki-dark);
 }
+
+/* A live example's code panel: edge to edge in its pane, with line numbers in the gutter. */
+.example-code .shiki {
+  min-width: max-content;
+  margin: 0;
+  padding: 14px 20px 18px 0;
+  border: 0;
+  border-radius: 0;
+  font-size: 13px;
+  line-height: 21px;
+  counter-reset: line;
+}
+.example-code .line::before {
+  display: inline-block;
+  position: sticky;
+  left: 0;
+  width: 48px;
+  margin-right: 16px;
+  padding-right: 12px;
+  background: var(--kitr-color-code);
+  color: var(--kitr-color-muted-foreground);
+  text-align: right;
+  content: counter(line);
+  counter-increment: line;
+}
+@media (max-width: 760px) {
+  .example-code .shiki {
+    font-size: 12.5px;
+  }
+  .example-code .line::before {
+    width: 36px;
+    margin-right: 12px;
+    padding-right: 8px;
+  }
+}
 .prose .code-file + pre {
   border-radius: 0 0 10px 10px;
 }
@@ -106,6 +141,9 @@ kbd {
   line-height: 22px;
 }
 .step-marker {
+  /* Above the rule that joins the steps (app/components/doc-body.tsx). */
+  position: relative;
+  z-index: 1;
   background: var(--kitr-color-primary);
   font-size: 15px;
 }
@@ -237,75 +275,23 @@ kbd {
   line-height: 22px;
 }
 
-/* Steps: on wide screens a rule runs down the left from one numbered step to the next. The steps
-   sit in several blocks (commands split them), so the rule is drawn per element. */
+/* Steps: on wide screens the numbered circles sit in the left margin, joined by one rule that
+   app/components/doc-body.tsx measures from the first circle to the last and draws behind them. */
+.steps-rule {
+  display: none;
+}
 @media (min-width: 761px) {
   .prose.steps .step-heading {
     position: relative;
     margin-left: -46px;
   }
-  .prose.steps .step-heading ~ :not(h2),
-  .prose.steps > :has(.step-heading) ~ div:not(.command) > :not(h2),
-  .prose.steps > :has(.step-heading) ~ .command {
-    position: relative;
-    /* Its own clipping would hide the rule; nothing inside it reaches past its rounded edge. */
-    overflow: visible;
-  }
-  .prose.steps .step-heading ~ :not(h2)::after,
-  .prose.steps > :has(.step-heading) ~ div:not(.command) > :not(h2)::after,
-  .prose.steps > :has(.step-heading) ~ .command::after {
-    content: "";
+  .steps-rule {
+    display: block;
     position: absolute;
-    /* The rule sits 31px left of the element's outer edge, but left counts from inside its
-       border, so a boxed element (code, callout, details) steps it back by its border width. */
-    left: calc(-31px - var(--step-rule-shift, 0px));
-    top: -26px;
-    bottom: 0;
     width: 2px;
+    margin-left: -1px;
     background: var(--kitr-color-border);
     pointer-events: none;
-  }
-  .prose.steps .command::after,
-  .prose.steps pre.shiki::after,
-  .prose.steps .callout::after,
-  .prose.steps blockquote::after,
-  .prose.steps details::after {
-    --step-rule-shift: 1px;
-  }
-  /* A step heading after the first joins the rule from above. */
-  .prose.steps .step-heading ~ .step-heading::before,
-  .prose.steps > :has(.step-heading) ~ div .step-heading::before {
-    content: "";
-    position: absolute;
-    left: 15px;
-    top: -52px;
-    height: 52px;
-    width: 2px;
-    background: var(--kitr-color-border);
-  }
-  /* Scrolling regions clip their own pseudo-elements, so tables draw the rule as a border image. */
-  .prose.steps .step-heading ~ .table-wrap::after,
-  .prose.steps > :has(.step-heading) ~ div > .table-wrap::after {
-    content: none;
-  }
-  .prose.steps .step-heading ~ .table-wrap,
-  .prose.steps > :has(.step-heading) ~ div > .table-wrap {
-    border-left: 2px solid transparent;
-    margin-left: -2px;
-    border-image:
-      linear-gradient(var(--kitr-color-border), var(--kitr-color-border)) 0 0 0 1 / 0 0 0 2px / 26px
-      0 0 31px;
-  }
-  /* The rule ends at the first ordinary heading after the steps ("Next steps"). */
-  .prose.steps .step-heading ~ h2:not(.step-heading) ~ ::after,
-  .prose.steps > :has(.step-heading) ~ div > h2:not(.step-heading) ~ ::after {
-    content: none;
-  }
-  .prose.steps .step-heading ~ h2:not(.step-heading) ~ .table-wrap,
-  .prose.steps > :has(.step-heading) ~ div > h2:not(.step-heading) ~ .table-wrap {
-    border: 0;
-    margin-left: 0;
-    border-image: none;
   }
 }
 
