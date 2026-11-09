@@ -4,6 +4,7 @@ import { cn } from '@kitr/tailwind'
 import { useEffect } from 'react'
 import { type PackageEntry, packageOrder } from '#app/lib/catalog'
 import type { Page } from '#app/lib/content'
+import type { ExampleSources } from '#app/lib/examples'
 import { DocBody } from './doc-body'
 import {
   Reveal,
@@ -30,10 +31,13 @@ export function PackageLayout({
   pkg,
   page,
   current,
+  sources = {},
 }: {
   pkg: PackageEntry
   page: Page | null
   current: string
+  /** The files of each live example, which the overview shows beside them. */
+  sources?: ExampleSources
 }) {
   const overview = current === ''
   const examples = overview ? pkg.examples : []
@@ -97,6 +101,7 @@ export function PackageLayout({
             storage={example.storage}
             height={example.height}
             width={example.width}
+            files={sources[example.slug] ?? []}
           />
         ))}
 

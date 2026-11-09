@@ -1,6 +1,7 @@
 // The data kitr.dev shows besides its markdown pages. A `generate` step in kitrrc.ts, so it runs
 // after kitr renders config/content.ts into .kitr/content, and writes app/generated (gitignored):
 // - packages.json: `kitr catalog --json`, with each package's live examples and pages,
+// - examples/<package>.json: the highlighted source files of each live example,
 // - kits.json: what each kit sets up, from the published @kitr/kit-* packages,
 // - planned.json: packages on the roadmap that have not shipped yet,
 // - platforms.json: the catalog's platform prose, highlighted, with app/content/platforms.mjs,
@@ -70,17 +71,45 @@ const pagesOf = (name) =>
           : { slug: item.slug, title: item.title },
     )
 
-/** The live examples in packages/<name>/examples, each with the `meta` it exports. */
-function examplesOf(name) {
-  const dir = join(repo, 'packages', name, 'examples')
-  if (!existsSync(dir)) return []
-  return readdirSync(dir)
-    .filter((f) => f.endsWith('.tsx'))
-    .map((f) => {
-      const meta = readFileSync(join(dir, f), 'utf8').match(/export const meta = (\{[\s\S]*?\n\})/)
-      return { slug: f.replace(/\.tsx$/, ''), ...(meta ? Function(`return ${meta[1]}`)() : {}) }
-    })
+const metaBlock = /\n*export const meta = (\{[\s\S]*?\n\})\n*/
+
+/**
+ * The files behind an example, as the code panel beside its demo shows them: the example itself,
+ * then every file it imports with a relative path, depth first. Paths are relative to the examples
+ * folder. The `meta` export describes the example to the site, so the panel leaves it out.
+ */
+function sourcesOf(dir, entry) {
+  const files = []
+  const visit = (path) => {
+    if (files.some((f) => f.path === path)) return
+    const code = readFileSync(join(dir, path), 'utf8').replace(metaBlock, '\n\n').trim()
+    files.push({ path, code: `${code}\n`, html: highlight(code, 'tsx') })
+    for (const [, spec] of code.matchAll(
+      /^(?:import|export)\b[^'"]*?from\s+['"](\.\.?\/[^'"]+)['"]/gm,
+    )) {
+      const base = join(dirname(path), spec)
+      const target = ['', '.tsx', '.ts', '/index.tsx', '/index.ts']
+        .map((ext) => base + ext)
+        .find((p) => /\.tsx?$/.test(p) && existsSync(join(dir, p)))
+      if (!target) throw new Error(`${join(dir, path)} imports ${spec}, which is not in examples/`)
+      visit(target)
+    }
+  }
+  visit(entry)
+  return files
 }
+
+/** The live examples in packages/<name>/examples, each with the `meta` it exports. */
+const examplesDir = (name) => join(repo, 'packages', name, 'examples')
+const exampleFiles = (name) =>
+  existsSync(examplesDir(name))
+    ? readdirSync(examplesDir(name)).filter((f) => f.endsWith('.tsx'))
+    : []
+const examplesOf = (name) =>
+  exampleFiles(name).map((f) => {
+    const meta = readFileSync(join(examplesDir(name), f), 'utf8').match(metaBlock)
+    return { slug: f.replace(/\.tsx$/, ''), ...(meta ? Function(`return ${meta[1]}`)() : {}) }
+  })
 
 const packages = [...catalog.packages, ...catalog.platforms]
   .sort((a, b) => a.name.localeCompare(b.name))
@@ -90,6 +119,19 @@ const packages = [...catalog.packages, ...catalog.platforms]
     examples: examplesOf(entry.name),
   }))
 write('packages.json', packages)
+
+// Each package's example sources in a file of their own, loaded only by its page.
+mkdirSync(join(out, 'examples'))
+for (const { name } of packages) {
+  const files = exampleFiles(name)
+  if (!files.length) continue
+  write(
+    `examples/${name}.json`,
+    Object.fromEntries(
+      files.map((f) => [f.replace(/\.tsx$/, ''), sourcesOf(examplesDir(name), f)]),
+    ),
+  )
+}
 
 // Planned packages from the package map; a package that has shipped wins.
 const shipped = new Set(packages.map((p) => p.name))

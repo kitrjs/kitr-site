@@ -83,6 +83,41 @@ kbd {
 [data-theme="dark"] .shiki span {
   color: var(--shiki-dark);
 }
+
+/* A live example's code panel: edge to edge in its pane, with line numbers in the gutter. */
+.example-code .shiki {
+  min-width: max-content;
+  margin: 0;
+  padding: 14px 20px 18px 0;
+  border: 0;
+  border-radius: 0;
+  font-size: 13px;
+  line-height: 21px;
+  counter-reset: line;
+}
+.example-code .line::before {
+  display: inline-block;
+  position: sticky;
+  left: 0;
+  width: 48px;
+  margin-right: 16px;
+  padding-right: 12px;
+  background: var(--kitr-color-code);
+  color: var(--kitr-color-muted-foreground);
+  text-align: right;
+  content: counter(line);
+  counter-increment: line;
+}
+@media (max-width: 760px) {
+  .example-code .shiki {
+    font-size: 12.5px;
+  }
+  .example-code .line::before {
+    width: 36px;
+    margin-right: 12px;
+    padding-right: 8px;
+  }
+}
 .prose .code-file + pre {
   border-radius: 0 0 10px 10px;
 }
