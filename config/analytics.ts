@@ -1,6 +1,7 @@
-import { defineConfig, googleAnalytics } from '@kitr/analytics'
+import { defineConfig } from '@kitr/analytics'
 import type { AppEvents } from '#app/analytics'
 import { env } from '#app/env'
+import { googleAnalytics } from '#app/lib/google-analytics'
 
 /**
  * Google Analytics 4 when VITE_GA_MEASUREMENT_ID is set at build time. With no adapter,
