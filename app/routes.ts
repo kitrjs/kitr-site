@@ -4,7 +4,7 @@ import router from '@kitr/router/routes'
 import { jsonLd, seo } from '@kitr/seo'
 import { type Category, categories, findPackage } from '#app/lib/catalog'
 import { loadDoc, loadGuide, loadPackagePage } from '#app/lib/content'
-import { loadExample } from '#app/lib/examples'
+import { loadExample, loadExampleSources } from '#app/lib/examples'
 import { findPlatform } from '#app/lib/platforms'
 import { articleJsonLd, ogImage, pageUrl, siteUrl } from '#app/lib/share'
 import { head, RootDocument, SiteNotFound } from './document'
@@ -159,8 +159,11 @@ export const routes = defineRoutes([router], (r) =>
           loader: async ({ params }) => {
             const pkg = findPackage(params.name)
             if (!pkg) throw notFound()
-            const page = await loadPackagePage(pkg.name, '')
-            return { pkg, page }
+            const [page, sources] = await Promise.all([
+              loadPackagePage(pkg.name, ''),
+              loadExampleSources(pkg.name),
+            ])
+            return { pkg, page, sources }
           },
           head: (ctx) => {
             const pkg = ctx.loaderData?.pkg
