@@ -1,0 +1,370 @@
+/* What kitr's own stylesheets don't cover. @kitr/content/styles.css styles the markdown (prose,
+   code, callouts, steps, next-step cards); the rules here set it to kitr.dev's tokens and add the
+   site's own touches. Everything else on the site is Tailwind utilities. */
+
+kbd {
+  font-size: 12px;
+  color: var(--kitr-color-mutedForeground);
+}
+@media (max-width: 760px) {
+  body {
+    font-size: 16px;
+  }
+}
+
+/* ------------------------------------------------------------- markdown */
+
+.prose {
+  --content-link: var(--kitr-color-link);
+  --content-tip: var(--kitr-color-brandGreen);
+  --content-warn: var(--kitr-color-brandRed);
+  --content-radius: 12px;
+  --content-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  max-width: 760px;
+  font-size: inherit;
+  line-height: inherit;
+}
+.prose p,
+.prose li {
+  line-height: 1.65;
+}
+[data-theme="dark"] .prose {
+  --content-tip: var(--kitr-color-ok);
+  --content-warn: var(--kitr-color-destructive);
+}
+.prose h2 {
+  font-size: 28px;
+  line-height: 1.2;
+  margin: 48px 0 12px;
+}
+.prose h3 {
+  font-size: 20px;
+  line-height: 1.2;
+}
+.prose .step-heading {
+  gap: 14px;
+}
+/* About 70 characters a line; the column itself stays wide for tables and code. */
+.prose > div > p,
+.prose > div > ul,
+.prose > div > ol,
+.prose .callout > p,
+.prose details > p {
+  max-width: 72ch;
+}
+
+.prose :not(pre) > code {
+  padding: 2px 5px;
+  border-radius: 5px;
+}
+.prose table {
+  font-size: 15px;
+  line-height: 23px;
+}
+.prose th,
+.prose td {
+  padding: 10px 14px;
+}
+
+/* Code: the site's own code colour, shiki's colours outside markdown too (the home page). */
+.prose .code > pre,
+.shiki {
+  padding: 16px 18px;
+  border: 1px solid var(--kitr-color-border);
+  border-radius: 10px;
+  /* biome-ignore lint/complexity/noImportantStyles: shiki writes its background inline */
+  background: var(--kitr-color-code) !important;
+  font-size: 14px;
+  line-height: 22px;
+}
+.shiki span {
+  color: var(--shiki-light);
+}
+[data-theme="dark"] .shiki span {
+  color: var(--shiki-dark);
+}
+.prose .code-file + pre {
+  border-radius: 0 0 10px 10px;
+}
+.prose .code-file {
+  padding: 6px 18px;
+  border-radius: 10px 10px 0 0;
+  font-size: 12px;
+  line-height: 20px;
+}
+.code-copy {
+  padding: 4px 10px;
+  line-height: inherit;
+  border-radius: 6px;
+}
+.code-file ~ .code-copy {
+  top: 41px;
+}
+.callout .callout-title {
+  margin-bottom: 6px;
+  font-size: 15px;
+  line-height: 22px;
+}
+.step-marker {
+  background: var(--kitr-color-primary);
+  font-size: 15px;
+}
+
+/* Callouts and quotes: one box, a hairline border with a 3px accent bar across the top. The bar
+   is a background layer under a transparent top border, so the rounded corners clip it flat. */
+.callout,
+.prose blockquote {
+  --callout-accent: var(--kitr-color-primary);
+  padding: 18px 20px 16px;
+  border: 1px solid var(--kitr-color-border);
+  border-top-color: transparent;
+  background:
+    linear-gradient(var(--callout-accent), var(--callout-accent)) top / 100% 3px no-repeat
+    border-box,
+    var(--kitr-color-muted);
+  color: var(--kitr-color-foreground);
+}
+.prose blockquote {
+  --callout-accent: var(--kitr-color-link);
+  border-radius: 12px;
+}
+[data-theme="dark"] .callout:not(.callout-tip, .callout-warning) {
+  --callout-accent: var(--kitr-color-link);
+}
+.prose .callout .code > pre,
+.prose .callout .command {
+  /* biome-ignore lint/complexity/noImportantStyles: beats the code block's own, which beats shiki's inline style */
+  background: var(--kitr-color-background) !important;
+}
+.command {
+  margin: 16px 0;
+}
+
+.prose h2,
+.prose h3 {
+  font-weight: 700;
+}
+.prose strong {
+  font-weight: 700;
+}
+.table-wrap {
+  border: 0;
+  border-radius: 10px;
+}
+.prose tr:last-child td {
+  border-bottom: 1px solid var(--kitr-color-border);
+}
+
+/* Collapsibles: native details with a chevron that turns when open. */
+.prose details {
+  margin: 20px 0;
+  padding: 0;
+  border: 1px solid var(--kitr-color-border);
+  border-radius: 12px;
+  background: var(--kitr-color-background);
+}
+.prose summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 10px 16px;
+  font-weight: 600;
+  cursor: pointer;
+  list-style: none;
+  border-radius: 12px;
+}
+.prose summary::-webkit-details-marker {
+  display: none;
+}
+.prose summary::before {
+  flex: none;
+  content: "";
+  width: 8px;
+  height: 8px;
+  margin: 0 4px 0 2px;
+  border-right: 2px solid var(--kitr-color-mutedForeground);
+  border-bottom: 2px solid var(--kitr-color-mutedForeground);
+  transform: rotate(-45deg);
+  transition: transform 0.18s;
+}
+.prose details[open] > summary::before {
+  transform: rotate(45deg) translate(-2px, -2px);
+}
+.prose details[open] > summary {
+  margin-bottom: 0;
+  border-bottom: 1px solid var(--kitr-color-border);
+  border-radius: 12px 12px 0 0;
+}
+@media (hover: hover) {
+  .prose summary:hover {
+    background: var(--kitr-color-muted);
+  }
+}
+.prose details > :not(summary) {
+  margin-left: 16px;
+  margin-right: 16px;
+}
+.prose details > summary + * {
+  margin-top: 14px;
+}
+.prose details > :last-child:not(summary) {
+  margin-bottom: 16px;
+}
+
+/* Next-step cards lift on hover. */
+.prose a.next-card,
+.next-card {
+  padding: 16px 18px;
+  transition:
+    border-color 0.15s,
+    transform 0.18s;
+}
+@media (hover: hover) {
+  .prose a.next-card:hover,
+  .next-card:hover {
+    border-color: var(--kitr-color-foreground);
+    transform: translateY(-2px);
+  }
+}
+.prose .next-card-title {
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 23px;
+}
+.next-card > span {
+  font-size: 15px;
+  line-height: 22px;
+}
+
+/* Steps: on wide screens a rule runs down the left from one numbered step to the next. The steps
+   sit in several blocks (commands split them), so the rule is drawn per element. */
+@media (min-width: 761px) {
+  .prose.steps .step-heading {
+    position: relative;
+    margin-left: -46px;
+  }
+  .prose.steps .step-heading ~ :not(h2),
+  .prose.steps > :has(.step-heading) ~ div:not(.command) > :not(h2),
+  .prose.steps > :has(.step-heading) ~ .command {
+    position: relative;
+    /* Its own clipping would hide the rule; nothing inside it reaches past its rounded edge. */
+    overflow: visible;
+  }
+  .prose.steps .step-heading ~ :not(h2)::after,
+  .prose.steps > :has(.step-heading) ~ div:not(.command) > :not(h2)::after,
+  .prose.steps > :has(.step-heading) ~ .command::after {
+    content: "";
+    position: absolute;
+    /* The rule sits 31px left of the element's outer edge, but left counts from inside its
+       border, so a boxed element (code, callout, details) steps it back by its border width. */
+    left: calc(-31px - var(--step-rule-shift, 0px));
+    top: -26px;
+    bottom: 0;
+    width: 2px;
+    background: var(--kitr-color-border);
+    pointer-events: none;
+  }
+  .prose.steps .command::after,
+  .prose.steps pre.shiki::after,
+  .prose.steps .callout::after,
+  .prose.steps blockquote::after,
+  .prose.steps details::after {
+    --step-rule-shift: 1px;
+  }
+  /* A step heading after the first joins the rule from above. */
+  .prose.steps .step-heading ~ .step-heading::before,
+  .prose.steps > :has(.step-heading) ~ div .step-heading::before {
+    content: "";
+    position: absolute;
+    left: 15px;
+    top: -52px;
+    height: 52px;
+    width: 2px;
+    background: var(--kitr-color-border);
+  }
+  /* Scrolling regions clip their own pseudo-elements, so tables draw the rule as a border image. */
+  .prose.steps .step-heading ~ .table-wrap::after,
+  .prose.steps > :has(.step-heading) ~ div > .table-wrap::after {
+    content: none;
+  }
+  .prose.steps .step-heading ~ .table-wrap,
+  .prose.steps > :has(.step-heading) ~ div > .table-wrap {
+    border-left: 2px solid transparent;
+    margin-left: -2px;
+    border-image:
+      linear-gradient(var(--kitr-color-border), var(--kitr-color-border)) 0 0 0 1 / 0 0 0 2px / 26px
+      0 0 31px;
+  }
+  /* The rule ends at the first ordinary heading after the steps ("Next steps"). */
+  .prose.steps .step-heading ~ h2:not(.step-heading) ~ ::after,
+  .prose.steps > :has(.step-heading) ~ div > h2:not(.step-heading) ~ ::after {
+    content: none;
+  }
+  .prose.steps .step-heading ~ h2:not(.step-heading) ~ .table-wrap,
+  .prose.steps > :has(.step-heading) ~ div > h2:not(.step-heading) ~ .table-wrap {
+    border: 0;
+    margin-left: 0;
+    border-image: none;
+  }
+}
+
+/* ------------------------------------------------------------- phones */
+
+@media (max-width: 760px) {
+  .prose {
+    overflow-wrap: break-word;
+  }
+  .prose h2 {
+    font-size: 24px;
+    line-height: 30px;
+    margin: 40px 0 10px;
+  }
+  .prose h3 {
+    font-size: 19px;
+    line-height: 26px;
+    margin: 28px 0 8px;
+  }
+  .callout {
+    margin: 20px 0;
+    padding: 16px 16px 14px;
+  }
+  .prose summary {
+    padding: 10px 12px;
+  }
+  .prose details > :not(summary) {
+    margin-left: 12px;
+    margin-right: 12px;
+  }
+  .prose .step-heading {
+    gap: 12px;
+  }
+  .prose p,
+  .prose li {
+    line-height: 1.6;
+  }
+  .prose .code > pre {
+    padding: 14px;
+  }
+  .prose table {
+    font-size: 14px;
+    line-height: 21px;
+  }
+  .prose th,
+  .prose td {
+    padding: 8px 10px;
+  }
+  .prose :not(pre) > code {
+    overflow-wrap: anywhere;
+  }
+  .prose td code {
+    overflow-wrap: normal;
+  }
+  .step-marker {
+    width: 28px;
+    height: 28px;
+  }
+  .next-cards {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

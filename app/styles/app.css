@@ -1,0 +1,153 @@
+@import "tailwindcss";
+@import "@kitr/tailwind/preset.css";
+@import "@kitr/theme/styles.css";
+@import "@fontsource/instrument-sans/latin-400.css";
+@import "@fontsource/instrument-sans/latin-500.css";
+@import "@fontsource/instrument-sans/latin-600.css";
+@import "@fontsource/instrument-sans/latin-700.css";
+@import "@fontsource/jetbrains-mono/latin-400.css";
+@import "@fontsource/jetbrains-mono/latin-500.css";
+@import "@fontsource/jetbrains-mono/latin-700.css";
+@import "@fontsource/asimovian/latin-400.css";
+@import "./tokens.css";
+@import "./base.css" layer(base);
+/* Rendered Markdown: @kitr/content's styles, then the site's own on top. Components style
+   themselves with utilities, which win over this layer. */
+@import "@kitr/content/styles.css";
+@import "./site.css" layer(components);
+/* Page transitions and the states that switch them off. Its own layer after utilities, so a rule
+   such as "no transition name while the search dialog is open" wins over a component's own. */
+@import "./motion.css" layer(motion);
+
+@source "../";
+/* The live examples from the kitr checkout use Tailwind utilities too. */
+@source "../../.content/kitr/packages/*/examples";
+
+/* The site's own tokens, beside the ones the preset maps. Values are in tokens.css. */
+@theme inline {
+  /* A border one step stronger than --color-border, for hovered cards. */
+  --color-border-strong: color-mix(
+    in srgb,
+    var(--kitr-color-foreground) 30%,
+    var(--kitr-color-border)
+  );
+  --color-link: var(--kitr-color-link);
+  --color-ok: var(--kitr-color-ok);
+  --color-code: var(--kitr-color-code);
+  --color-brand-green: var(--kitr-color-brandGreen);
+  --color-brand-red: var(--kitr-color-brandRed);
+  --color-client: var(--kitr-color-client);
+  --color-client-foreground: var(--kitr-color-clientForeground);
+  --color-server: var(--kitr-color-server);
+  --color-server-foreground: var(--kitr-color-serverForeground);
+  --font-display: "Asimovian", "Avenir Next", system-ui, sans-serif;
+}
+
+@theme {
+  /* `max-phone:` is a phone (760px and narrower), `max-tablet:` a tablet or small laptop. */
+  --breakpoint-phone: 761px;
+  --breakpoint-tablet: 1101px;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  /* An icon that changes (the menu button, the theme toggle) turns in. */
+  /* The terminal and the kitrrc.ts block cross-fade when the visitor changes them (never on load). */
+  --animate-swap-in: swap-in 160ms var(--ease-out) both;
+  @keyframes swap-in {
+    from {
+      opacity: 0;
+      transform: translateY(2px);
+    }
+  }
+  /* The copy button's check pops in when the command is copied (and only then). */
+  --animate-pop: pop 180ms var(--ease-out) both;
+  @keyframes pop {
+    from {
+      opacity: 0;
+      transform: scale(0.6);
+    }
+  }
+  --animate-pending: pending 1.1s var(--ease-in-out) infinite;
+  @keyframes pending {
+    from {
+      transform: translateX(-100%);
+    }
+    to {
+      transform: translateX(250%);
+    }
+  }
+  /* The header gains a shadow as the page scrolls (driven by scroll, where browsers allow it). */
+  --animate-header-shade: header-shade linear both;
+  @keyframes header-shade {
+    to {
+      box-shadow:
+        0 1px 0 var(--kitr-color-border),
+        0 8px 24px rgb(15 27 43 / 0.06);
+    }
+  }
+  /* The home hero rises in on the first page load. The title and pitch are the largest paint,
+     so they only slide: a fade on them would hold the largest contentful paint back. */
+  --animate-rise: rise 420ms var(--ease-out) both;
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+  }
+  --animate-rise-slide: rise-slide 420ms var(--ease-out) both;
+  @keyframes rise-slide {
+    from {
+      transform: translateY(10px);
+    }
+  }
+  --animate-icon-in: icon-in 180ms var(--ease-out) both;
+  @keyframes icon-in {
+    from {
+      opacity: 0;
+      transform: rotate(-90deg) scale(0.7);
+    }
+  }
+}
+
+/* `first-load:` applies until the first client-side page change (use-navigated-flag sets
+   data-navigated then), so coming back to a page does not replay its entrance. */
+@custom-variant first-load (html:not([data-navigated]) &);
+
+/* The page column: 1280px wide, 24px gutters, 16px on phones. */
+@utility container {
+  max-width: 1280px;
+  margin-inline: auto;
+  padding-inline: 24px;
+  @variant max-phone {
+    padding-inline: 16px;
+  }
+}
+
+/* The small uppercase mono caption above sections and in the footer. */
+@utility label {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-muted-foreground);
+}
+
+/* The larger muted paragraph under a page title. */
+@utility lede {
+  font-size: 20px;
+  line-height: 32px;
+  color: var(--color-muted-foreground);
+}
+
+/* The blueprint grid on the "made by platon" badges. */
+/* A fine white grid over a plate's colour; --plate-line and --plate-cell change its weight and size. */
+@utility bg-plate-grid {
+  --plate-grid: var(--plate-line, rgb(255 255 255 / 0.14));
+  background-image:
+    linear-gradient(var(--plate-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--plate-grid) 1px, transparent 1px);
+  background-size: var(--plate-cell, 6px) var(--plate-cell, 6px);
+  background-position: -1px -1px;
+}

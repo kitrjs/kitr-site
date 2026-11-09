@@ -1,0 +1,73 @@
+/* Element defaults for the whole site, in Tailwind's base layer so utilities override them. */
+
+/* Tailwind's preflight resets heading weights; the site's headings are bold unless a rule says otherwise. */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-weight: 700;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-padding-top: 88px;
+}
+
+html {
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  margin: 0;
+  background: var(--kitr-color-background);
+  color: var(--kitr-color-foreground);
+  font-family: "Instrument Sans", "Helvetica Neue", system-ui, sans-serif;
+  font-size: 17px;
+  line-height: 28px;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Links are underlined unless a component says otherwise (Tailwind's preflight would inherit). */
+a {
+  color: var(--kitr-color-link);
+  text-decoration-line: underline;
+  text-underline-offset: 3px;
+}
+@media (hover: hover) {
+  a:hover {
+    color: var(--kitr-color-foreground);
+  }
+}
+
+:focus-visible {
+  outline: 2px solid var(--kitr-color-primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+h1,
+h2,
+h3 {
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+
+code,
+kbd,
+pre {
+  font-family: "JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+
+/* On phones the docs bar sits under the header, so anchors stop below both. */
+@media (max-width: 760px) {
+  html:has(.docs-bar) {
+    scroll-padding-top: 128px;
+  }
+}

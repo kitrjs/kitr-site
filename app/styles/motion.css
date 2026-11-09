@@ -1,0 +1,43 @@
+/* Motion on top of @kitr/animation. Page changes and the kept header and sidebar come from its
+   page-transitions.css (imported in app/router.tsx); everything else animates with Tailwind
+   utilities or @kitr/animation's motion components. */
+
+/* The header's picture has no backdrop blur, so its translucent background would show the page
+   moving underneath unblurred. An opaque backing hides that for the few frames it lasts. */
+::view-transition-group(*.site-header) {
+  background: var(--kitr-color-background);
+}
+
+/* Theme switch: the new theme is revealed in a circle from the toggle (theme-toggle.tsx). */
+html.theme-switching [data-kitr-keep] {
+  view-transition-name: none;
+}
+html.theme-switching::view-transition-old(root) {
+  animation: none;
+}
+html.theme-switching::view-transition-new(root) {
+  animation: theme-reveal 320ms var(--ease-in-out) both;
+}
+@keyframes theme-reveal {
+  from {
+    clip-path: circle(0 at var(--theme-x) var(--theme-y));
+  }
+  to {
+    clip-path: circle(150% at var(--theme-x) var(--theme-y));
+  }
+}
+
+/* Reduced motion: Tailwind's animations and transitions finish at once. Motion components follow
+   config/animation.ts and the page changes their own stylesheet. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after,
+  *::backdrop {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+  }
+}

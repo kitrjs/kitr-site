@@ -1,0 +1,12 @@
+node_modules
+dist
+.output
+.nitro
+.tanstack
+.kitr
+*.local
+.env
+app/generated
+.content
+public/og
+public/apple-touch-icon.png

@@ -1,0 +1,139 @@
+name: Deploy
+
+# Checks the site, builds it into an nginx image, pushes that to ghcr.io/kitrjs/kitr-site and asks
+# Coolify to run it, then waits for the site to serve the new build and checks its main pages.
+# The docs come from kitrjs/kitr at build time, so a change there needs a rebuild too: the daily
+# run catches it, and kitrjs/kitr can send a `docs` repository_dispatch to deploy at once.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "17 4 * * *"
+  repository_dispatch:
+    types: [docs]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Where the Coolify app serves the site; a repo variable, so a preview domain can stand in.
+  SITE_URL: ${{ vars.SITE_URL || 'https://kitr.dev' }}
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      kitr: ${{ steps.kitr.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Pick the kitrjs/kitr commit to read the docs from
+        id: kitr
+        run: echo "sha=$(git ls-remote https://github.com/kitrjs/kitr refs/heads/main | cut -f1)" >> "$GITHUB_OUTPUT"
+
+      - name: Check out the docs
+        run: |
+          git init -q .content/kitr
+          git -C .content/kitr fetch -q --depth 1 https://github.com/kitrjs/kitr ${{ steps.kitr.outputs.sha }}
+          git -C .content/kitr checkout -q FETCH_HEAD
+
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+
+  deploy:
+    needs: check
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push the image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}:latest
+            ghcr.io/${{ github.repository }}:${{ github.sha }}
+          build-args: |
+            KITR_SHA=${{ needs.check.outputs.kitr }}
+            SITE_SHA=${{ github.sha }}
+            VITE_GA_MEASUREMENT_ID=${{ vars.VITE_GA_MEASUREMENT_ID }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Ask Coolify to run the new image
+        id: coolify
+        env:
+          WEBHOOK: ${{ secrets.COOLIFY_DEPLOY_WEBHOOK }}
+          TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+          # The Coolify host sits behind Cloudflare Access; a service token lets the call through.
+          CF_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+          CF_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
+        run: |
+          if [ -z "$WEBHOOK" ]; then
+            echo "COOLIFY_DEPLOY_WEBHOOK is not set: the image is pushed, nothing is deployed."
+            exit 0
+          fi
+          # A redirect (a Cloudflare Access login, for one) is a failure too, not a deploy.
+          status=$(curl --silent --show-error -o response.txt -w '%{http_code}' -X POST \
+            -H "Authorization: Bearer $TOKEN" -H "Accept: application/json" \
+            -H "CF-Access-Client-Id: $CF_ID" -H "CF-Access-Client-Secret: $CF_SECRET" "$WEBHOOK")
+          cat response.txt; echo
+          if [ "$status" != "200" ]; then
+            echo "::error::Coolify answered $status, so the site was not redeployed."
+            exit 1
+          fi
+          echo "deployed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Wait for the new build to go live
+        if: steps.coolify.outputs.deployed == 'true'
+        run: |
+          for i in $(seq 1 60); do
+            if curl -fsS "$SITE_URL/version.txt?run=$GITHUB_RUN_ID" | grep -qx "site $GITHUB_SHA"; then
+              echo "Live after $((i * 10))s."
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "::error::$SITE_URL/version.txt still doesn't show $GITHUB_SHA after 10 minutes."
+          exit 1
+
+      - name: Check the main pages
+        if: steps.coolify.outputs.deployed == 'true'
+        run: |
+          failed=0
+          check() {
+            code=$(curl -s -o /dev/null -w '%{http_code}' "$SITE_URL$1")
+            if [ "$code" = "$2" ]; then echo "ok   $code $1"; else echo "::error::$1 answered $code, expected $2"; failed=1; fi
+          }
+          for path in / /docs /docs/getting-started /guides /packages /packages/state /packages/state/guide \
+            /platforms /platforms/web /about /privacy /play/forms/new-invoice /sitemap.xml /llms.txt \
+            /og/home.png /docs/getting-started.md; do
+            check "$path" 200
+          done
+          check /this-page-does-not-exist 404
+          exit $failed

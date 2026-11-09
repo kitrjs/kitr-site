@@ -1,0 +1,62 @@
+/*
+ * kitr.dev's palette as kitr theme tokens. @kitr/theme's styles, the Tailwind preset
+ * (bg-background, text-muted-foreground, border-border, ...) and the site's own CSS all read these.
+ * The extra tokens below (link, ok, code, brand, client/server) are mapped into Tailwind in app.css.
+ */
+:root {
+  color-scheme: light;
+  --kitr-color-background: #ffffff;
+  --kitr-color-foreground: #0f1b2b;
+  --kitr-color-muted: #f4f6f9;
+  --kitr-color-mutedForeground: #556273;
+  --kitr-color-border: #dce2ea;
+  /* The brand blue, one of the three pieces of the mark; white on it is 4.9:1. */
+  --kitr-color-primary: #2368ee;
+  --kitr-color-primaryForeground: #ffffff;
+  --kitr-color-destructive: #c42626;
+  --kitr-color-destructiveForeground: #ffffff;
+  --kitr-color-ring: #2368ee;
+  --kitr-font-sans: "Instrument Sans", "Helvetica Neue", system-ui, sans-serif;
+  --kitr-font-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  /* rounded-sm, rounded-md and rounded-lg: icon buttons and chips, buttons and code, cards. */
+  --kitr-radius-sm: 6px;
+  --kitr-radius-md: 10px;
+  --kitr-radius-lg: 12px;
+  --kitr-shadow-md: 0 1px 2px rgb(15 27 43 / 0.06), 0 8px 24px rgb(15 27 43 / 0.08);
+
+  --kitr-color-link: #2457cc;
+  --kitr-color-ok: #157a3e;
+  --kitr-color-code: #f4f6f9;
+  --kitr-color-brandGreen: #208046;
+  --kitr-color-brandRed: #d62d2c;
+  /* Runs-on badges: soft tints with ink of the same hue, apart from the category fills. */
+  --kitr-color-client: #e6ecff;
+  --kitr-color-clientForeground: #2f45b5;
+  --kitr-color-server: #fbeedd;
+  --kitr-color-serverForeground: #8a4a0c;
+
+  /* The space between the big sections of a page (home, about, platforms) and above the footer. */
+  --section-gap: clamp(80px, 8vw, 120px);
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+  --kitr-color-background: #0b121c;
+  --kitr-color-foreground: #eef2f7;
+  --kitr-color-muted: #131d2a;
+  --kitr-color-mutedForeground: #9aa7b8;
+  --kitr-color-border: #243244;
+  --kitr-color-primary: #2368ee;
+  --kitr-color-primaryForeground: #ffffff;
+  --kitr-color-destructive: #ff8080;
+  --kitr-color-ring: #2368ee;
+  --kitr-shadow-md: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 24px rgb(0 0 0 / 0.35);
+
+  --kitr-color-link: #7fa6ff;
+  --kitr-color-ok: #5fd58c;
+  --kitr-color-code: #131d2a;
+  --kitr-color-client: #1d2a52;
+  --kitr-color-clientForeground: #b3c3ff;
+  --kitr-color-server: #3a2a16;
+  --kitr-color-serverForeground: #f4c88a;
+}

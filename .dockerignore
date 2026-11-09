@@ -1,0 +1,11 @@
+node_modules
+dist
+.content
+app/generated
+.git
+*.log
+.kitr
+public/og
+public/apple-touch-icon.png
+.github
+.env
