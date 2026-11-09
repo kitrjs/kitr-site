@@ -18,6 +18,8 @@ export function Command({
 }) {
   const pm = usePm((s) => s.pm)
   const setPm = usePm((s) => s.setPm)
+  const hintDismissed = usePm((s) => s.hintDismissed)
+  const dismissHint = usePm((s) => s.dismissHint)
   const { copy: write, copied } = useClipboard()
   const analytics = useAnalytics<AppEvents>()
   const text = withManager(cmd, pm)
@@ -58,11 +60,22 @@ export function Command({
       <pre className="overflow-x-auto px-4 py-3.5 text-[14px] leading-[22px]">
         <code>{text}</code>
       </pre>
-      {note && pm === 'kitr' && (
-        <p className="px-4 pb-3 text-[13px] leading-5 text-muted-foreground [&_code]:text-[12px]">
-          First time? Run <code>npm i -g @kitr/kitr</code> once. Inside a project, the global{' '}
-          <code>kitr</code> runs your project's own version.
-        </p>
+      {note && pm === 'kitr' && !hintDismissed && (
+        <div className="flex items-start gap-2 pr-1.5 pb-3 pl-4">
+          <p className="flex-auto text-[13px] leading-5 text-muted-foreground [&_code]:text-[12px]">
+            First time? Run <code>npm i -g @kitr/kitr</code> once. Inside a project, the global{' '}
+            <code>kitr</code> runs your project's own version.
+          </p>
+          <button
+            type="button"
+            className="-mt-1 inline-flex size-7 flex-none cursor-pointer items-center justify-center rounded-sm bg-transparent text-muted-foreground transition-[color,background-color] duration-120 hover:bg-border hover:text-foreground"
+            onClick={dismissHint}
+            aria-label="Hide this hint"
+            title="I have kitr installed"
+          >
+            <Icon icon={icons.close} size={14} />
+          </button>
+        </div>
       )}
     </div>
   )
