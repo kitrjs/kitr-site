@@ -11,9 +11,12 @@ const examples = import.meta.glob<{ default: ComponentType }>(
 export const loadExample = (pkg: string, example: string) =>
   examples[`../../.content/kitr/packages/${pkg}/examples/${example}.tsx`]
 
-/** One file of an example, highlighted at build time. `path` is relative to the examples folder. */
+/** One file of an example, highlighted at build time. */
 export interface ExampleFile {
+  /** Relative to the package's examples folder, as on GitHub. */
   path: string
+  /** Where the file would live in an app: `config/flags.ts`. */
+  name: string
   code: string
   html: string
 }

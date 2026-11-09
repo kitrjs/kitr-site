@@ -75,15 +75,20 @@ const metaBlock = /\n*export const meta = (\{[\s\S]*?\n\})\n*/
 
 /**
  * The files behind an example, as the code panel beside its demo shows them: the example itself,
- * then every file it imports with a relative path, depth first. Paths are relative to the examples
- * folder. The `meta` export describes the example to the site, so the panel leaves it out.
+ * then every file it imports with a relative path, depth first. `path` is relative to the examples
+ * folder. An example's own files live in a folder named after it, laid out as in an app
+ * (`percentage-rollout/config/flags.ts`), so `name` drops that folder: `config/flags.ts`. The
+ * `meta` export describes the example to the site, so the panel leaves it out.
  */
 function sourcesOf(dir, entry) {
+  const own = `${entry.replace(/\.tsx$/, '')}/`
   const files = []
   const visit = (path) => {
     if (files.some((f) => f.path === path)) return
     const code = readFileSync(join(dir, path), 'utf8').replace(metaBlock, '\n\n').trim()
-    files.push({ path, code: `${code}\n`, html: highlight(code, 'tsx') })
+    const name = path.startsWith(own) ? path.slice(own.length) : path
+    const html = highlight(code, path.endsWith('.tsx') ? 'tsx' : 'ts')
+    files.push({ path, name, code: `${code}\n`, html })
     for (const [, spec] of code.matchAll(
       /^(?:import|export)\b[^'"]*?from\s+['"](\.\.?\/[^'"]+)['"]/gm,
     )) {
