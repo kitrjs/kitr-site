@@ -34,6 +34,12 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* While the cookie question is open, its height (app/components/consent-banner.tsx) pads the page,
+   so the end of every page can still be scrolled clear of it. */
+body[data-consent="open"] {
+  padding-bottom: var(--consent-height, 0);
+}
+
 /* Links are underlined unless a component says otherwise (Tailwind's preflight would inherit). */
 a {
   color: var(--kitr-color-link);
