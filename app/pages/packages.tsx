@@ -82,6 +82,13 @@ export default function Packages() {
   useEffect(() => {
     setQuery(urlSearch.q ?? '')
     setHydrated(true)
+    // Land in the filter, ready to type. Not on touch screens, where focusing pops the keyboard
+    // over the list, and not when the reader is already somewhere else on the page.
+    const el = input.current
+    const idle = !document.activeElement || document.activeElement === document.body
+    if (el && idle && window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+      el.focus({ preventScroll: true })
+    }
   }, [])
 
   const set = (next: Search) =>
