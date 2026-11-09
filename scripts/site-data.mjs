@@ -2,7 +2,7 @@
 // after kitr renders config/content.ts into .kitr/content, and writes app/generated (gitignored):
 // - packages.json: `kitr catalog --json`, with each package's live examples and pages,
 // - examples/<package>.json: the highlighted source files of each live example,
-// - kits.json: what each kit sets up, from the published @kitr/kit-* packages,
+// - kits.json: each kit's prose and what its example output holds; kits/<kit>.json: its files,
 // - planned.json: packages on the roadmap that have not shipped yet,
 // - platforms.json: the catalog's platform prose, highlighted, with app/content/platforms.mjs,
 // - release.json: the @kitr/kitr version the site documents, for the footer,
@@ -11,9 +11,10 @@
 import { execFileSync } from 'node:child_process'
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
-import { fileURLToPath, pathToFileURL } from 'node:url'
+import { fileURLToPath } from 'node:url'
 import { renderMarkdown } from '@kitr/content/markdown'
 import { createHighlighter } from 'shiki'
+import * as kitContent from '../app/content/kits.mjs'
 import { builder, choices, order } from '../app/content/platforms.mjs'
 import { ogImage, readCatalog, touchIcon } from './og.mjs'
 
@@ -42,7 +43,10 @@ const navOf = (collection) => {
 }
 
 const themes = { light: 'github-light-high-contrast', dark: 'github-dark' }
-const highlighter = await createHighlighter({ themes: Object.values(themes), langs: ['ts', 'tsx'] })
+const highlighter = await createHighlighter({
+  themes: Object.values(themes),
+  langs: ['ts', 'tsx', 'js', 'json', 'css', 'md', 'dotenv', 'yaml', 'toml', 'rust'],
+})
 const highlight = (code, lang) =>
   highlighter
     .codeToHtml(code, { lang, themes, defaultColor: false })
@@ -148,39 +152,110 @@ write(
 
 // ---------------------------------------------------------------- kits
 
-// The catalog lists the kits; each kit's built setup module says what it sets up.
-const kits = [
-  {
-    name: 'blank',
-    text: 'The wiring files and nothing else: no platform, no React, no server. kitr add brings each.',
-    platforms: [],
-    packages: [],
-    components: 0,
-  },
+/**
+ * Every kit from the checkout: its `kitr` block, with the `kit` prose, and what its unmodified
+ * output in examples/ holds. The platforms and packages are read from that output's kitrrc.ts,
+ * the components from app/components/ui, so the page shows what `kitr new` writes today.
+ */
+const kitBlocks = [
+  kitContent.blank,
+  ...readdirSync(join(repo, 'packages'))
+    .filter((dir) => dir.startsWith('kit-'))
+    .map((dir) => {
+      const manifest = readJson(join(repo, 'packages', dir, 'package.json'))
+      if (!manifest.kitr?.kit)
+        throw new Error(`packages/${dir}/package.json has no kitr.kit block for kitr.dev/kits`)
+      return { ...manifest.kitr, package: manifest.name }
+    }),
 ]
-const kitOrder = [
-  'app',
-  'fullstack',
-  'server',
-  'saas',
-  'site',
-  'realtime',
-  'desktop',
-  'tauri',
-  'mobile',
-]
-for (const name of kitOrder) {
-  const entry = catalog.kits.find((k) => k.name === name)
-  const dist = join(site, 'node_modules/@kitr', `kit-${name}`, 'dist/kitr.js')
-  if (!entry || !existsSync(dist))
-    throw new Error(`The ${name} kit is missing: npm install @kitr/kit-${name}`)
-  const { kit } = (await import(pathToFileURL(dist).href)).default
+const rank = (name) => {
+  const i = kitContent.order.indexOf(name)
+  return i < 0 ? kitContent.order.length : i
+}
+kitBlocks.sort((a, b) => rank(a.name) - rank(b.name) || a.name.localeCompare(b.name))
+
+/** Files a kit's output carries that are not part of a new project. */
+const notWritten = new Set(['node_modules', '.kitr', 'dist', '.gitkeep'])
+const filesIn = (dir, base = '') =>
+  readdirSync(join(dir, base), { withFileTypes: true })
+    .filter((e) => !notWritten.has(e.name))
+    .flatMap((e) => {
+      const path = base ? `${base}/${e.name}` : e.name
+      return e.isDirectory() ? filesIn(dir, path) : [path]
+    })
+    .sort()
+
+const fileLang = (path) => {
+  const name = path.split('/').pop()
+  if (name.startsWith('.env')) return 'dotenv'
+  const ext = name.includes('.') ? name.split('.').pop() : ''
+  return (
+    { ts: 'ts', tsx: 'tsx', mjs: 'js', js: 'js', json: 'json', css: 'css', md: 'md' }[ext] ??
+    { yml: 'yaml', yaml: 'yaml', toml: 'toml', rs: 'rust' }[ext] ??
+    'text'
+  )
+}
+
+/** kitrrc.ts entries as `name: type(options)`, in the order the file lists them. */
+const platformLines = (rc) =>
+  [
+    ...(rc.match(/^ {2}platforms: \{\n([\s\S]*?)^ {2}\},?$/m)?.[1] ?? '').matchAll(
+      /^ {4}([\w-]+): (\w+)\((.*)\),?$/gm,
+    ),
+  ].map(([, name, type, options]) => ({ name, type, options }))
+
+const kits = []
+mkdirSync(join(out, 'kits'))
+for (const block of kitBlocks) {
+  const { kit } = block
+  const dir = join(repo, kit.example)
+  if (!existsSync(join(dir, 'kitrrc.ts')))
+    throw new Error(`The ${block.name} kit's example ${kit.example} is not in the checkout`)
+  const rc = readFileSync(join(dir, 'kitrrc.ts'), 'utf8')
+  const platformsOf = platformLines(rc)
+  const listed = [
+    ...(rc.match(/^ {2}packages: \[([\s\S]*?)\]/m)?.[1] ?? '').matchAll(/'@kitr\/([\w-]+)'/g),
+  ].map((m) => m[1])
+  const kinds = new Map(packages.map((p) => [p.name, p]))
+  const kitPackages = listed.filter(
+    (name) => kinds.has(name) && !kinds.get(name).included && kinds.get(name).kind !== 'platform',
+  )
+  const ui = join(dir, 'app/components/ui')
+  const components = existsSync(ui)
+    ? readdirSync(ui)
+        .filter((f) => f.endsWith('.tsx'))
+        .map((f) => f.replace(/\.tsx$/, ''))
+    : []
+  const files = filesIn(dir)
+  if (kit.entry && !files.includes(kit.entry))
+    throw new Error(`The ${block.name} kit's entry ${kit.entry} is not in ${kit.example}`)
+  // The example's package.json points at the workspace; a new project gets the release.
+  const asWritten = (path, code) =>
+    path === 'package.json'
+      ? code
+          .replace(/"name": "@kitr\/example-[\w-]+"/, '"name": "my-app"')
+          .replaceAll(
+            '"workspace:*"',
+            `"^${readJson(join(repo, 'packages/kitr/package.json')).version}"`,
+          )
+      : code
+  write(
+    `kits/${block.name}.json`,
+    files.map((path) => {
+      const code = asWritten(path, readFileSync(join(dir, path), 'utf8'))
+      return { path, html: highlight(code.trimEnd(), fileLang(path)) }
+    }),
+  )
   kits.push({
-    name,
-    text: kit.description ?? entry.summary,
-    platforms: Object.entries(kit.platforms ?? {}).map(([n, p]) => `${n}: ${p.type}`),
-    packages: kit.packages.map((p) => (typeof p === 'string' ? p : p.name)),
-    components: kit.components?.length ?? 0,
+    name: block.name,
+    title: block.title,
+    summary: block.summary,
+    package: block.package,
+    ...kit,
+    platforms: platformsOf,
+    packages: kitPackages,
+    components,
+    files,
   })
 }
 write('kits.json', kits)
@@ -217,7 +292,7 @@ const platforms = order.map((type) => {
     code: highlight(snippet, snippet.includes('</') ? 'tsx' : 'ts'),
     native: own.native,
     nativeLabel: own.nativeLabel,
-    kits: own.kits,
+    kits: kits.filter((k) => k.platforms.some((p) => p.type === type)).map((k) => k.name),
     packages: {
       native,
       other: eligible.filter((e) => !native.includes(e.name)).map((e) => e.name),
@@ -288,6 +363,19 @@ const seoPages = [
     description: p.tagline,
     kind: `Platform · ${p.targets.join(', ')}`,
     tile: { icon: icons.glyphs[p.type] ?? 'Package01Icon', color: p.color },
+  })),
+  {
+    path: '/kits',
+    title: 'Kits',
+    description: `${kits.length} starting points for kitr new, from an empty project to a signed-in product.`,
+    kind: 'Kits',
+  },
+  ...kits.map((k) => ({
+    path: `/kits/${k.name}`,
+    title: k.title,
+    description: k.summary,
+    kind: k.base ? `Kit · built on ${k.base}` : 'Kit',
+    tile: tileFor(`kit-${k.name}`, 'kits'),
   })),
   {
     path: '/about',

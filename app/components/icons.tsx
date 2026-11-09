@@ -7,6 +7,9 @@ import {
   Copy01Icon,
   Database01Icon,
   Delete02Icon,
+  File01Icon,
+  Folder01Icon,
+  FolderOpenIcon,
   GithubIcon,
   LayoutTwoColumnIcon,
   LinkSquare02Icon,
@@ -69,4 +72,7 @@ export const icons = {
   split: LayoutTwoColumnIcon,
   code: SourceCodeIcon,
   storage: Database01Icon,
+  file: File01Icon,
+  folder: Folder01Icon,
+  folderOpen: FolderOpenIcon,
 }

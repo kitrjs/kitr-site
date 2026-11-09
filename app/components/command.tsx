@@ -80,3 +80,39 @@ export function Command({
     </div>
   )
 }
+
+/**
+ * One `kitr ...` line on a card, copyable, in the package manager chosen on any `Command`. Use
+ * `Command` where the picker should show; this is for lists with a command per row.
+ */
+export function CommandLine({ cmd, className }: { cmd: string; className?: string }) {
+  const pm = usePm((s) => s.pm)
+  const { copy: write, copied } = useClipboard()
+  const analytics = useAnalytics<AppEvents>()
+  const text = withManager(cmd, pm)
+  const copy = async () => {
+    await write(text)
+    analytics.track('command.copied', { command: cmd.split(' ').slice(0, 2).join(' '), pm })
+  }
+  return (
+    <div
+      className={cn(
+        'flex min-w-0 items-center gap-1 rounded-sm border border-border bg-code py-0.5 pr-0.5 pl-3',
+        className,
+      )}
+    >
+      <code className="min-w-0 flex-auto overflow-x-auto py-1.5 text-[13px] leading-5 whitespace-nowrap [scrollbar-width:none]">
+        {text}
+      </code>
+      <button
+        type="button"
+        className="inline-flex size-8 flex-none cursor-pointer items-center justify-center rounded-sm bg-transparent text-muted-foreground transition-[color,background-color,scale] duration-120 hover:bg-border hover:text-foreground active:scale-97 data-copied:[&_svg]:animate-pop"
+        data-copied={copied || undefined}
+        onClick={copy}
+        aria-label={`Copy ${text}`}
+      >
+        <Icon key={String(copied)} icon={copied ? icons.check : icons.copy} size={15} />
+      </button>
+    </div>
+  )
+}

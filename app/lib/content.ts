@@ -1,5 +1,5 @@
 import type { Page as ContentPage, SearchEntry } from '@kitr/content'
-import { findPackage, planned } from '#app/lib/catalog'
+import { findPackage, kits, planned } from '#app/lib/catalog'
 import { type Collection, loadPage, loadSearch, nav } from '#kitr/content'
 
 export type { SearchEntry, TocEntry } from '@kitr/content'
@@ -89,7 +89,8 @@ export const docsNav = nav.docs
 
 /**
  * The search index from `kitr generate`, with each package page at its address and named after
- * its package ("Mail: API reference", not "API reference"), plus the packages still on the roadmap.
+ * its package ("Mail: API reference", not "API reference"), plus the kits and the packages still on
+ * the roadmap.
  */
 export async function loadSiteSearch(): Promise<SearchEntry[]> {
   const index = await loadSearch()
@@ -114,5 +115,12 @@ export async function loadSiteSearch(): Promise<SearchEntry[]> {
     heading: '',
     text: p.summary,
   }))
-  return [...pages, ...roadmap]
+  const kitPages = kits.map((k) => ({
+    url: `/kits/${k.name}`,
+    title: `${k.title} ${k.name}`,
+    section: 'Kits',
+    heading: '',
+    text: `${k.summary} ${k.audience}`,
+  }))
+  return [...pages, ...kitPages, ...roadmap]
 }

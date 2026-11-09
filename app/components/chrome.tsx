@@ -24,6 +24,7 @@ const navItems: Array<{
   section: string
 }> = [
   { label: 'Platforms', to: '/platforms', section: '/platforms' },
+  { label: 'Kits', to: '/kits', section: '/kits' },
   { label: 'Packages', to: '/packages', section: '/packages' },
   { label: 'Docs', to: '/docs', section: '/docs' },
   { label: 'Guides', to: '/guides', section: '/guides' },
@@ -180,18 +181,17 @@ const footerLinks: Array<{ title: string; links: Array<{ label: string; to: stri
     title: 'Learn',
     links: [
       { label: 'Getting started', to: '/docs/getting-started' },
+      { label: 'Docs', to: '/docs' },
       { label: 'Guides', to: '/guides' },
-      { label: 'Project structure', to: '/docs/project-structure' },
-      { label: 'Platforms', to: '/docs/platforms' },
       { label: 'CLI reference', to: '/docs/cli' },
     ],
   },
   {
     title: 'Build',
     links: [
+      { label: 'Kits', to: '/kits' },
+      { label: 'Packages', to: '/packages' },
       { label: 'Platforms', to: '/platforms' },
-      { label: 'All packages', to: '/packages' },
-      { label: 'Forms', to: '/packages/forms' },
       { label: 'Build a package', to: '/docs/building-packages' },
     ],
   },

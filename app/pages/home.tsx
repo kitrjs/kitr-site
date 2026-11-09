@@ -3,7 +3,6 @@ import { cn } from '@kitr/tailwind'
 import { useState } from 'react'
 import { useSwapped } from '#app/hooks/use-swapped'
 import { categoryCounts, findPackage, glyph, kits, packages } from '#app/lib/catalog'
-import { repoUrl } from '#components/chrome'
 import { Command } from '#components/command'
 import { Icon } from '#components/icons'
 import { Tile } from '#components/package-bits'
@@ -61,7 +60,7 @@ const terminal = [
 ] as const
 
 type Card = { title: string; text: string; icon: string } & (
-  | { to: '/packages' | '/platforms' }
+  | { to: '/packages' | '/platforms' | '/kits' }
   | { slug: string }
   | { pkg: string }
 )
@@ -72,7 +71,7 @@ const gets: Card[] = [
     title: 'Start from a kit',
     text: `${kits.length} starting apps, packages already wired.`,
     icon: 'ui',
-    slug: 'kits',
+    to: '/kits',
   },
   {
     title: 'Add a package with one command',
@@ -203,17 +202,12 @@ export default function Home() {
             >
               Get started
             </Link>
+            <Link to="/kits" className={cn(buttonVariants(), heroButton)}>
+              Kits
+            </Link>
             <Link to="/packages" className={cn(buttonVariants(), heroButton)}>
               Packages
             </Link>
-            <a
-              href={repoUrl}
-              className={cn(buttonVariants(), heroButton)}
-              target="_blank"
-              rel="noreferrer"
-            >
-              GitHub
-            </a>
           </div>
         </div>
         <div className="flex min-w-0 flex-col gap-3">
