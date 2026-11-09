@@ -99,5 +99,10 @@
     "#components/*": "./app/components/*",
     "#server/*": "./server/*",
     "#kitr/*": "./.kitr/*"
+  },
+  "overrides": {
+    "satori": {
+      "fflate": "0.7.5"
+    }
   }
 }
