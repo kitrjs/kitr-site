@@ -20,3 +20,17 @@ it('finds a package by its short name, at its own address', async () => {
   const [hit] = search(await loadSiteSearch(), 'i18n')
   expect(hit?.url).toBe('/packages/i18n')
 })
+
+it('finds a CLI command by name, in the CLI reference', async () => {
+  const entries = await loadSiteSearch()
+  for (const command of ['kitr remove', 'kitr doctor', 'kitr make:page']) {
+    const [hit] = search(entries, command)
+    expect(hit?.title).toBe(command)
+    expect(hit?.url).toMatch(/^\/docs\/cli#[\w-]+$/)
+  }
+})
+
+it('keeps better-auth off the roadmap, since its adapter ships in @kitr/auth', async () => {
+  const roadmap = (await loadSiteSearch()).filter((e) => e.section === 'Roadmap')
+  expect(roadmap.map((e) => e.title)).not.toContain('better-auth')
+})
