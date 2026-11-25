@@ -1,4 +1,5 @@
 import type { Page as ContentPage, SearchEntry } from '@kitr/content'
+import commands from '#app/generated/commands.json'
 import { findPackage, kits, planned } from '#app/lib/catalog'
 import { type Collection, loadPage, loadSearch, nav } from '#kitr/content'
 
@@ -89,8 +90,9 @@ export const docsNav = nav.docs
 
 /**
  * The search index from `kitr generate`, with each package page at its address and named after
- * its package ("Mail: API reference", not "API reference"), plus the kits and the packages still on
- * the roadmap.
+ * its package ("Mail: API reference", not "API reference"), plus each CLI command, the kits and the
+ * packages still on the roadmap. A command is its own entry titled `kitr remove`, so typing the
+ * command finds its section of the CLI reference first.
  */
 export async function loadSiteSearch(): Promise<SearchEntry[]> {
   const index = await loadSearch()
@@ -122,5 +124,12 @@ export async function loadSiteSearch(): Promise<SearchEntry[]> {
     heading: '',
     text: `${k.summary} ${k.audience}`,
   }))
-  return [...pages, ...kitPages, ...roadmap]
+  const cli = commands.map((c) => ({
+    url: `/docs/cli#${c.anchor}`,
+    title: c.command,
+    section: 'CLI',
+    heading: '',
+    text: `${c.usage} ${c.text}`,
+  }))
+  return [...cli, ...pages, ...kitPages, ...roadmap]
 }

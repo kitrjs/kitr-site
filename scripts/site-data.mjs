@@ -7,6 +7,7 @@
 // - platforms.json: the catalog's platform prose, highlighted, with app/content/platforms.mjs,
 // - release.json: the @kitr/kitr version the site documents, for the footer,
 // - changelog.json: every package's Changesets CHANGELOG.md, one entry per release, for /changelog,
+// - commands.json: each command in the CLI reference's tables, so search finds `kitr remove` itself,
 // and the share images in public/og.
 import { execFileSync } from 'node:child_process'
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
@@ -149,6 +150,49 @@ write(
   'planned.json',
   roadmap.packages.filter((p) => !shipped.has(p.name)),
 )
+
+// ---------------------------------------------------------------- CLI commands
+
+/**
+ * One search entry per command in docs/cli.md: every table row whose first cell is a single
+ * `kitr <command>` or `make:<kind>`. It points at the section the row links to ("See [Remove a package](#...)"),
+ * or else at the section the table is in. The first row for a command wins (`kitr add <pkg...>`
+ * over `kitr add <type> <name>`).
+ */
+function cliCommands() {
+  const slug = (heading) =>
+    heading
+      .toLowerCase()
+      .replace(/[^\p{L}\p{N}\s_-]/gu, '')
+      .trim()
+      .replace(/\s/g, '-')
+  const plain = (md) =>
+    md
+      .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+      .replace(/`/g, '')
+      .replace(/\\\|/g, '|')
+      .trim()
+  const commands = new Map()
+  let section = ''
+  for (const line of readFileSync(join(repo, 'docs/cli.md'), 'utf8').split('\n')) {
+    const heading = /^#{2,3} (.+)$/.exec(line)
+    if (heading) section = slug(plain(heading[1]))
+    // `kitr new <dir>` in the command tables; `make:page projects` in the generators table.
+    const row = /^\| `((?:kitr )?[a-z][\w:-]*)([^`]*)` \| (.+) \|$/.exec(line)
+    if (!row || !/^(kitr |make)/.test(row[1])) continue
+    const command = row[1].startsWith('kitr ') ? row[1] : `kitr ${row[1]}`
+    if (commands.has(command)) continue
+    const link = /\(#([\w-]+)\)/.exec(row[3])
+    commands.set(command, {
+      command,
+      usage: `${command}${row[2]}`,
+      anchor: link ? link[1] : section,
+      text: plain(row[3]),
+    })
+  }
+  return [...commands.values()]
+}
+write('commands.json', cliCommands())
 
 // ---------------------------------------------------------------- kits
 

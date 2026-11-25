@@ -41,7 +41,14 @@ function describe(r: SearchEntry) {
       </span>
     ),
     title: r.title,
-    kind: root === 'guides' ? 'Guide' : r.section === 'Roadmap' ? 'Roadmap' : 'Docs',
+    kind:
+      root === 'guides'
+        ? 'Guide'
+        : r.section === 'Roadmap'
+          ? 'Roadmap'
+          : r.section === 'CLI'
+            ? 'Command'
+            : 'Docs',
   }
 }
 

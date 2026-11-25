@@ -18,14 +18,6 @@
       "summary": "Take payments and subscriptions, and check what each user has paid for, including in-app purchases."
     },
     {
-      "name": "better-auth",
-      "status": "later",
-      "category": "auth",
-      "runsOn": "both",
-      "builtOn": ["Better Auth"],
-      "summary": "Run kitr sign-in, sessions and permissions on Better Auth instead of writing your own."
-    },
-    {
       "name": "ai",
       "status": "later",
       "category": "backend",
